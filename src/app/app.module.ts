@@ -7,9 +7,11 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import type { Request, Response } from 'express';
 import { join } from 'node:path';
 import { AppResolver } from './app.resolver';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       context: ({ req, res }: { req: Request; res: Response }) => ({
