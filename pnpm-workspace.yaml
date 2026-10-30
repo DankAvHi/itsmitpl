@@ -1,5 +1,7 @@
 allowBuilds:
   '@apollo/protobufjs': true
   '@parcel/watcher': true
+  '@prisma/engines': true
   '@swc/core': true
+  prisma: true
   unrs-resolver: true
