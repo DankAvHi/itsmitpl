@@ -1,0 +1,5 @@
+services:
+  postgres:
+    restart: always
+    volumes:
+      - ./work_data/pg/:/var/lib/postgresql
