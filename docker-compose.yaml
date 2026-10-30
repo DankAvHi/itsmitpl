@@ -1,10 +1,41 @@
+name: itsmitpl
+
+x-db: &db
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+
 services:
   postgres:
-    image: 'postgres:latest'
+    image: postgres:17
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 10s
       timeout: 5s
       retries: 5
-    env_file:
-      - .env
+
+  migrate:
+    build: .
+    command: pnpm exec prisma migrate deploy
+    restart: 'no'
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment: *db
+
+  seed:
+    build: .
+    command: pnpm db:seed
+    restart: 'no'
+    profiles: ['seed']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    environment: *db
+  backend:
+    build: .
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    environment: *db
+
+  proxy:
+    image: caddy:2
+    cap_add: [NET_BIND_SERVICE]
+    extra_hosts: ['host.docker.internal:host-gateway']

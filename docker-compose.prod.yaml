@@ -1,5 +1,20 @@
+x-env: &env
+  env_file: [.env]
+
 services:
   postgres:
+    <<: *env
     restart: always
+    volumes: ['./work_data/pg:/var/lib/postgresql']
+  migrate: *env
+  seed: *env
+  backend:
+    <<: *env
+    restart: always
+  proxy:
+    restart: unless-stopped
+    ports: ['443:443', '80:80']
     volumes:
-      - ./work_data/pg/:/var/lib/postgresql
+      - ./Caddyfile:/etc/caddy/Caddyfile:Z
+      - ./work_data/proxy/data:/data
+      - ./work_data/proxy/config:/config

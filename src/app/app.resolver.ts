@@ -7,7 +7,7 @@ export class AppResolver {
 
   @Query(() => String)
   async ping() {
-    const result = await this.prismaService.$queryRaw`SELECT 1`;
+    const result = await this.prismaService.profile.count();
     return result ? 'Server OK, DB Ok' : 'Server OK, DB Error';
   }
 }
