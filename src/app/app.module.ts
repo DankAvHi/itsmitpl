@@ -8,9 +8,11 @@ import type { Request, Response } from 'express';
 import { join } from 'node:path';
 import { AppResolver } from './app.resolver';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '@/prisma/prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
