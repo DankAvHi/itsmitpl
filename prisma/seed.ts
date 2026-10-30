@@ -44,8 +44,8 @@ const main = async () => {
                 {
                   company: 'Аванта телеком',
                   position: 'Frontend разработчик',
-                  startDate: new Date('10.01.2024'),
-                  endDate: new Date('08.01.2025'),
+                  startDate: new Date('2024-10-01'),
+                  endDate: new Date('2025-08-01'),
                   achievements: [
                     'Единолично создал react native приложение Партнёрского портала',
                   ],
@@ -53,8 +53,8 @@ const main = async () => {
                 {
                   company: 'М2М',
                   position: 'Fullstack разработчик',
-                  startDate: new Date('09.01.2025'),
-                  endDate: new Date('07.01.2026'),
+                  startDate: new Date('2025-09-01'),
+                  endDate: new Date('2026-07-01'),
                   achievements: [
                     'Участвовал в разработке самописной DSL системы',
                   ],
@@ -80,4 +80,9 @@ const main = async () => {
   }
 };
 
-void main();
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());
