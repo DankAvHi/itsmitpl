@@ -5,7 +5,7 @@ services:
   postgres:
     <<: *env
     restart: always
-    volumes: ['./work_data/pg:/var/lib/postgresql']
+    volumes: ['./work_data/pg:/var/lib/postgresql/data']
   migrate: *env
   seed: *env
   backend:
@@ -13,7 +13,7 @@ services:
     restart: always
   proxy:
     restart: unless-stopped
-    ports: ['443:443', '80:80']
+    ports: ['8443:443', '8880:80']
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:Z
       - ./work_data/proxy/data:/data
