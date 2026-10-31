@@ -15,6 +15,7 @@ import { ProfileModule } from '@/profile/profile.module';
     PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
+      introspection: true,
       driver: ApolloDriver,
       context: ({ req, res }: { req: Request; res: Response }) => ({
         req,
@@ -23,7 +24,12 @@ import { ProfileModule } from '@/profile/profile.module';
       autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
       sortSchema: true,
       graphiql: false,
-      plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      plugins: [
+        ApolloServerPluginLandingPageLocalDefault({
+          embed: true,
+          includeCookies: true,
+        }),
+      ],
     }),
   ],
   controllers: [AppController],
