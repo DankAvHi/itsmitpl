@@ -4,6 +4,8 @@ import { Field, ObjectType } from '@nestjs/graphql';
 export class Project {
   @Field(() => String)
   name!: string;
+  @Field(() => String)
+  description!: string;
   @Field(() => String, { nullable: true })
   link?: string;
   @Field(() => String, { nullable: true })

@@ -72,6 +72,7 @@ const main = async () => {
               {
                 name: 'notanote',
                 repoLink: 'https://github.com/DankAvHi/notanote-client',
+                description: 'Клиентская часть приложения для заметок',
               },
             ],
           },
