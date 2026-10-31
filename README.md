@@ -1,98 +1,134 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Цифровая визитка
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+GraphQL API-визитка разработчика: профиль, ссылки, навыки, опыт работы и проекты. База данных готовится и заполняется автоматически при запуске.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Демо: https://dev.dankavhi.ru/graphql (Apollo Sandbox). Работает на моём домашнем сервере.
 
-## Description
+## Стек
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Node.js 24, TypeScript
+- NestJS, GraphQL (Apollo Server, code-first)
+- Prisma 7 (драйвер-адаптер pg), PostgreSQL 17
+- Docker Compose, Caddy (reverse proxy)
 
-## Project setup
+## Быстрый запуск
 
-```bash
-$ pnpm install
+Нужны Docker с Compose v2 и bash. Одна команда копирует примеры конфигов и поднимает всё окружение:
+
+```
+cp .env.example .env.development.local && cp Caddyfile.example dev.Caddyfile && ./start.sh dev
 ```
 
-## Compile and run the project
+После старта Sandbox открывается на http://localhost:8080/graphql
 
-```bash
-# development
-$ pnpm run start
+Что происходит при запуске:
 
-# watch mode
-$ pnpm run start:dev
+- поднимается Postgres, запуск ждёт его healthcheck
+- сервис migrate применяет миграции (prisma migrate deploy)
+- сервис seed заполняет базу, если она пуста
+- после успешного сида стартует backend
+- Caddy отдаёт приложение на порт 8080
 
-# production mode
-$ pnpm run start:prod
+Если bash недоступен (например, Windows без WSL), то же самое без скрипта:
+
+```
+docker compose --env-file .env.development.local -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build
 ```
 
-## Run tests
+Пароли в .env.example рассчитаны на локальный запуск. Для публичного деплоя замените их.
 
-```bash
-# unit tests
-$ pnpm run test
+## Команды start.sh
 
-# e2e tests
-$ pnpm run test:e2e
+- ./start.sh dev — полное dev-окружение в контейнерах
+- ./start.sh prod — prod-окружение
+- ./start.sh services — только Postgres, миграции и прокси; приложение запускается на хосте через pnpm start:dev, прокси ходит к нему на host.docker.internal:3000
+- ./start.sh seed dev — стереть данные и залить заново из prisma/seed.ts
+- ./start.sh stop — остановить окружение
 
-# test coverage
-$ pnpm run test:cov
+## Prod
+
+```
+cp .env.example .env && cp Caddyfile.example Caddyfile && ./start.sh prod
 ```
 
-## Deployment
+В prod наружу опубликованы порты 80 и 443, поэтому адрес :8080 из примера там не подходит: впишите в Caddyfile своё доменное имя, и Caddy сам получит HTTPS-сертификат. Данные Postgres лежат в ./work_data/pg, сертификаты Caddy в ./work_data/proxy.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Пример запроса
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+```graphql
+query {
+  profile {
+    name
+    description
+    links {
+      label
+      url
+    }
+    skills {
+      name
+      description
+    }
+    experience {
+      company
+      position
+      startDate
+      endDate
+      achievements
+    }
+    projects {
+      name
+      description
+      link
+      repoLink
+    }
+  }
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Структура
 
-## Resources
+- src/app — корневой модуль, подключение GraphQL
+- src/prisma — PrismaModule и PrismaService, только инфраструктура
+- src/profile — модуль профиля: резолвер, сервис, GraphQL-модели
+- prisma — schema.prisma, миграции, seed.ts
+- docker-compose.yaml, docker-compose.dev.yaml, docker-compose.prod.yaml, start.sh — запуск окружений
 
-Check out a few resources that may come in handy when working with NestJS:
+## Архитектурные решения
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### GraphQL code-first
 
-## Support
+Схема генерируется из TypeScript-классов с декораторами, а не пишется отдельно в SDL. Так нет второго источника правды, который нужно синхронизировать с кодом.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Один модуль profile
 
-## Stay in touch
+Ссылки, навыки, опыт и проекты не существуют сами по себе: по заданию они отдаются только как поля профиля. Отдельный модуль на каждую сущность дал бы четыре пары модуль-сервис-резолвер с одним методом и лишние зависимости между модулями. Граница модуля совпадает с границей агрегата. Если у сущности появится своя логика (поиск, мутации), её стоит вынести в отдельный модуль.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Разделение ответственности
 
-## License
+Резолвер знает только про GraphQL и вызывает сервис. Сервис знает только про Prisma и ничего не знает про GraphQL. PrismaService вынесен в отдельный модуль. Отдельный слой репозиториев поверх Prisma не добавлял: сам Prisma Client уже играет эту роль.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Схема базы данных
+
+Плоская модель: Profile и четыре зависимых таблицы (Link, Skill, Experience, Project), у каждой profileId с каскадным удалением и индексом по внешнему ключу. Навык уникален в рамках профиля. Связи между навыками и проектами не моделировал: задание их не требует. Достижения хранятся массивом строк, а не отдельной таблицей: самостоятельной сущностью они не являются, а отдельная таблица под каждое место работы создала бы настоящий N+1. Период работы хранится как startDate и endDate типа date, а не строкой: по ним можно сортировать, а null в endDate означает "по настоящее время".
+
+### Вложенные данные и N+1
+
+Связи профиля отдаются через ResolveField, поэтому читаются из базы только если клиент их запросил: запрос профиля с одним именем делает один запрос в БД. Внутри сервиса связи читаются через findUnique и fluent API (profile.findUnique(...).skills()): Prisma склеивает такие вызовы, пришедшие в одном тике, в один запрос. Сейчас профиль один, поэтому N+1 в чистом виде не возникает; такая форма выбрана, чтобы он не появился, если профилей станет больше.
+
+### Инициализация базы данных
+
+Миграции применяются при каждом старте (migrate deploy), а сид заполняет только пустую базу, поэтому перезапуск не затирает данные. Принудительная перезаливка делается отдельной командой ./start.sh seed. Сид выполняется в транзакции: если он упал, база не остаётся пустой. Порядок запуска (Postgres, миграции, сид, приложение) задан через depends_on с healthcheck и условием service_completed_successfully, поэтому приложение не стартует на неготовой базе.
+
+### Docker и Caddy
+
+Три compose-файла: базовый, dev и prod, а start.sh выбирает нужную пару. Caddy стоит перед приложением как reverse proxy: в prod он автоматически выпускает HTTPS-сертификаты. Образ собирается из одного Dockerfile, и им же запускаются миграции и сид.
+
+### Что сделано сознательно не было
+
+- Аутентификация и валидация ввода: API только на чтение и не принимает пользовательских данных.
+- Мутации: данные меняются через seed.ts.
+- Юнит-тесты: сервисный слой тонкий, и тест с замоканным Prisma проверял бы только мок. Первым шагом добавил бы e2e-тест запроса profile на настоящей базе.
+
+## Свои данные
+
+Все данные профиля лежат в prisma/seed.ts. После правки их можно применить командой ./start.sh seed dev, она стирает существующие данные и заливает заново.
