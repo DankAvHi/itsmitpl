@@ -1,4 +1,4 @@
-example.com {
+:8080 {
     handle {
         reverse_proxy {$UPSTREAM}
     }
